@@ -1,0 +1,64 @@
+project:
+  name: credit-risk-platform
+  model_version: v0.1.0
+
+data:
+  training_path: data/raw/credit_train.csv
+  target_column: default_flag
+  id_column: application_id
+
+split:
+  validation_size: 0.2
+  test_size: 0.2
+  random_seed: 42
+
+model:
+  candidates:
+    - logistic_regression
+    - random_forest
+  logistic_regression:
+    C: 1.0
+    max_iter: 1000
+    class_weight: balanced
+    solver: liblinear
+  random_forest:
+    n_estimators: 300
+    max_depth: 8
+    min_samples_leaf: 20
+    random_state: 42
+
+calibration:
+  enabled: true
+  methods:
+    - sigmoid
+    - isotonic
+
+inference:
+  approve_threshold: 0.08
+  decline_threshold: 0.20
+  risk_bands:
+    - name: A
+      max_pd: 0.05
+    - name: B
+      max_pd: 0.10
+    - name: C
+      max_pd: 0.20
+    - name: D
+      max_pd: 0.35
+    - name: E
+      max_pd: 1.0
+
+artifacts:
+  local_dir: artifacts
+  model_filename: model_bundle.joblib
+  metrics_filename: metrics.json
+
+storage:
+  s3_bucket: credit-risk-platform-artifacts
+  s3_prefix: models/
+  dynamodb_table: credit_predictions
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  title: Credit Risk Platform API

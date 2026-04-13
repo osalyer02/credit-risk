@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Credit Risk Platform - FastAPI scoring service
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 1024
+    Environment:
+      Variables:
+        CRP_STORAGE__BACKEND: aws
+        CRP_STORAGE__S3_BUCKET: !Ref ArtifactsBucket
+        CRP_STORAGE__S3_PREFIX: credit-risk/
+        CRP_STORAGE__DYNAMODB_TABLE: !Ref PredictionsTable
+        CRP_PROJECT__MODEL_VERSION: v0.1.0
+
+Resources:
+  ArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  PredictionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: credit_predictions
+      AttributeDefinitions:
+        - AttributeName: request_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: request_id
+          KeyType: HASH
+
+  CreditRiskApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: credit_risk.aws.lambda_handler.handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref ArtifactsBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PredictionsTable
+      Events:
+        ProxyApi:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        RootApi:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+  BucketName:
+    Description: Artifacts bucket name
+    Value: !Ref ArtifactsBucket
+  PredictionsTableName:
+    Description: DynamoDB table for prediction metadata
+    Value: !Ref PredictionsTable
