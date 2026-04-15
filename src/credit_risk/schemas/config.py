@@ -97,9 +97,12 @@ class InferenceConfig(BaseModel):
 
 
 class ArtifactsConfig(BaseModel):
-    local_dir: str = "artifacts"
+    local_dir: str = "artifacts/models"
+    metrics_dir: str = "artifacts/metrics"
     model_filename: str = "model_bundle.joblib"
     metrics_filename: str = "metrics.json"
+    validation_report_filename: str = "validation_report.json"
+    registry_filename: str = "model_registry_record.json"
 
 
 class StorageConfig(BaseModel):

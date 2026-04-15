@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -18,13 +19,14 @@ from sklearn.pipeline import Pipeline
 from credit_risk.config.settings import load_config
 from credit_risk.data.clean import clean_training_data
 from credit_risk.data.load import load_dataset
-from credit_risk.data.validate import validate_training_schema
+from credit_risk.data.validate import validate_training_schema_with_report
 from credit_risk.features.engineering import apply_feature_engineering
 from credit_risk.features.preprocess import build_preprocessor, infer_feature_spec
 from credit_risk.models.calibrate import CalibrationResult, calibrate_estimator
 from credit_risk.models.evaluate import compute_binary_classification_metrics
 from credit_risk.models.explain import global_feature_importance
 from credit_risk.schemas.config import AppConfig
+from credit_risk.schemas.registry import ModelRegistryRecord
 from credit_risk.utils.artifacts import ModelBundle, create_artifact_store, save_bundle
 
 
@@ -117,11 +119,16 @@ def _calibration_to_dict(calibration: CalibrationResult) -> dict[str, object]:
 
 
 def train_from_config(config: AppConfig) -> TrainingResult:
+    metrics_output_dir = Path(config.artifacts.metrics_dir) / config.project.model_version
+    metrics_output_dir.mkdir(parents=True, exist_ok=True)
+    validation_report_path = metrics_output_dir / config.artifacts.validation_report_filename
+
     raw = load_dataset(config.data.training_path)
-    validated = validate_training_schema(
+    validated, validation_report = validate_training_schema_with_report(
         frame=raw,
         target_column=config.data.target_column,
         id_column=config.data.id_column,
+        report_path=validation_report_path,
     )
     cleaned = clean_training_data(
         frame=validated,
@@ -209,6 +216,8 @@ def train_from_config(config: AppConfig) -> TrainingResult:
     final_metrics = {
         "selected_model": best.name,
         "model_version": config.project.model_version,
+        "validation_report_path": str(validation_report_path),
+        "validation_passed": validation_report.passed,
         "leaderboard": leaderboard,
         "selected_metrics": best.metrics,
     }
@@ -227,16 +236,27 @@ def train_from_config(config: AppConfig) -> TrainingResult:
 
     artifact_store = create_artifact_store(config)
     bundle_key = f"{config.project.model_version}/{config.artifacts.model_filename}"
-    metrics_key = f"{config.project.model_version}/{config.artifacts.metrics_filename}"
-
     bundle_uri = save_bundle(bundle=bundle, store=artifact_store, key=bundle_key)
-    metrics_uri = artifact_store.put_bytes(metrics_key, json.dumps(final_metrics, indent=2).encode("utf-8"))
 
-    # Always persist local copies for local inspection and testing.
-    artifact_dir = Path(config.artifacts.local_dir) / config.project.model_version
-    artifact_dir.mkdir(parents=True, exist_ok=True)
-    (artifact_dir / config.artifacts.metrics_filename).write_text(
-        json.dumps(final_metrics, indent=2),
+    metrics_path = metrics_output_dir / config.artifacts.metrics_filename
+    metrics_path.write_text(json.dumps(final_metrics, indent=2), encoding="utf-8")
+    metrics_uri = str(metrics_path)
+
+    registry_record = ModelRegistryRecord(
+        model_id=f"{config.project.name}:{config.project.model_version}:{best.name}",
+        model_version=config.project.model_version,
+        model_type=best.name,
+        calibration_method=best.calibration_method,
+        artifact_uri=bundle_uri,
+        metrics_uri=metrics_uri,
+        training_data_path=config.data.training_path,
+        feature_columns=bundle.feature_columns,
+        status="TRAINED",
+        created_at=datetime.now(timezone.utc),
+    )
+    registry_path = metrics_output_dir / config.artifacts.registry_filename
+    registry_path.write_text(
+        json.dumps(registry_record.model_dump(mode="json"), indent=2),
         encoding="utf-8",
     )
 

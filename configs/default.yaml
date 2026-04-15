@@ -49,9 +49,12 @@ inference:
       max_pd: 1.0
 
 artifacts:
-  local_dir: artifacts
+  local_dir: artifacts/models
+  metrics_dir: artifacts/metrics
   model_filename: model_bundle.joblib
   metrics_filename: metrics.json
+  validation_report_filename: validation_report.json
+  registry_filename: model_registry_record.json
 
 storage:
   s3_bucket: credit-risk-platform-artifacts

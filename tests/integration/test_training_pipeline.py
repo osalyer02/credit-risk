@@ -19,3 +19,9 @@ def test_training_pipeline_runs_end_to_end(local_test_config, synthetic_training
     assert "selected_metrics" in result.metrics
     assert Path(result.bundle_uri).exists()
     assert Path(result.metrics_uri).exists()
+    assert "artifacts/models" in str(result.bundle_uri)
+    assert "artifacts/metrics" in str(result.metrics_uri)
+
+    metrics_dir = Path(local_test_config.artifacts.metrics_dir) / local_test_config.project.model_version
+    assert (metrics_dir / local_test_config.artifacts.validation_report_filename).exists()
+    assert (metrics_dir / local_test_config.artifacts.registry_filename).exists()

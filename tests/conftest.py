@@ -60,11 +60,16 @@ def synthetic_training_frame() -> pd.DataFrame:
 def local_test_config(tmp_path: Path) -> AppConfig:
     base = load_config(base_path="configs/default.yaml", env_path="configs/local.yaml").model_dump()
 
-    artifact_dir = tmp_path / "artifacts"
+    artifact_root = tmp_path / "artifacts"
+    artifact_models_dir = artifact_root / "models"
+    artifact_metrics_dir = artifact_root / "metrics"
+    artifact_models_dir.mkdir(parents=True, exist_ok=True)
+    artifact_metrics_dir.mkdir(parents=True, exist_ok=True)
     base["project"]["model_version"] = "test-v1"
-    base["artifacts"]["local_dir"] = str(artifact_dir)
+    base["artifacts"]["local_dir"] = str(artifact_models_dir)
+    base["artifacts"]["metrics_dir"] = str(artifact_metrics_dir)
     base["storage"]["backend"] = "local"
-    base["storage"]["local_prediction_store_path"] = str(artifact_dir / "predictions.jsonl")
+    base["storage"]["local_prediction_store_path"] = str(artifact_root / "predictions.jsonl")
 
     return AppConfig.model_validate(base)
 

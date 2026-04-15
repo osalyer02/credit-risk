@@ -106,7 +106,12 @@ python scripts/generate_synthetic_data.py --rows 2500 --seed 42
 python -m credit_risk.models.train --config configs/default.yaml --env-config configs/local.yaml
 ```
 
-Artifacts are saved under `artifacts/<model_version>/` by default.
+Artifacts are saved under:
+
+- `artifacts/models/<model_version>/model_bundle.joblib`
+- `artifacts/metrics/<model_version>/metrics.json`
+- `artifacts/metrics/<model_version>/validation_report.json`
+- `artifacts/metrics/<model_version>/model_registry_record.json`
 
 ## Run API Locally
 
