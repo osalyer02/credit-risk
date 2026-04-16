@@ -42,12 +42,15 @@ def test_api_predict_and_retrieve(
         health_resp = client.get("/health")
         assert health_resp.status_code == 200
         assert health_resp.json()["status"] == "ok"
+        assert health_resp.json()["model_loaded"] is True
 
         predict_resp = client.post("/predict", json=_sample_applicant())
         assert predict_resp.status_code == 200
         payload = predict_resp.json()
         assert 0 <= payload["pd_score"] <= 1
+        assert payload["risk_band"] in {"A", "B", "C", "D", "E"}
         assert payload["decision_recommendation"] in {"APPROVE", "REVIEW", "DECLINE"}
+        assert payload["reason_codes"]
         request_id = payload["request_id"]
 
         fetch_resp = client.get(f"/prediction/{request_id}")
@@ -57,3 +60,20 @@ def test_api_predict_and_retrieve(
         batch_resp = client.post("/predict_batch", json={"applicants": [_sample_applicant()]})
         assert batch_resp.status_code == 200
         assert batch_resp.json()["request_count"] == 1
+
+
+def test_health_reports_unloaded_model(local_test_config, write_config_file):
+    config_payload = local_test_config.model_dump(mode="python")
+    config_payload["project"]["model_version"] = "no-artifact-version"
+    config = local_test_config.__class__.model_validate(config_payload)
+    config_path = write_config_file(config)
+
+    app = create_app(base_config_path=config_path, env_config_path=None)
+
+    with TestClient(app) as client:
+        health_resp = client.get("/health")
+        assert health_resp.status_code == 200
+        payload = health_resp.json()
+        assert payload["status"] == "ok"
+        assert payload["model_loaded"] is False
+        assert payload["model_version"] == "no-artifact-version"

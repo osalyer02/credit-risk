@@ -30,8 +30,26 @@ def get_prediction_service(request: Request) -> PredictionService:
 
 
 @router.get("/health", response_model=HealthResponse)
-def health(service: PredictionService = Depends(get_prediction_service)) -> HealthResponse:
-    return service.health()
+def health(request: Request) -> HealthResponse:
+    service = getattr(request.app.state, "prediction_service", None)
+    startup_error = getattr(request.app.state, "startup_error", None)
+    config = getattr(request.app.state, "config", None)
+
+    if service is not None:
+        response = service.health()
+        response.model_loaded = True
+        response.startup_error = None
+        return response
+
+    model_version = "unavailable"
+    if config is not None:
+        model_version = config.project.model_version
+
+    return HealthResponse(
+        model_version=model_version,
+        model_loaded=False,
+        startup_error=startup_error,
+    )
 
 
 @router.post("/predict", response_model=PredictionResponse)

@@ -60,6 +60,8 @@ class HealthResponse(BaseModel):
     status: Literal["ok"] = "ok"
     service: str = "credit-risk-platform"
     model_version: str
+    model_loaded: bool = True
+    startup_error: Optional[str] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
