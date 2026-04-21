@@ -57,9 +57,7 @@ artifacts:
   registry_filename: model_registry_record.json
 
 storage:
-  s3_bucket: credit-risk-platform-artifacts
-  s3_prefix: models/
-  dynamodb_table: credit_predictions
+  local_prediction_store_path: artifacts/predictions.jsonl
 
 api:
   host: 0.0.0.0

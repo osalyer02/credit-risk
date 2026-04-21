@@ -1,8 +1,0 @@
-storage:
-  backend: aws
-  s3_bucket: your-credit-risk-artifacts-bucket
-  s3_prefix: credit-risk/
-  dynamodb_table: credit_predictions
-
-api:
-  debug: false

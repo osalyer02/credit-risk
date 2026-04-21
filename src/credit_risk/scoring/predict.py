@@ -11,8 +11,6 @@ import json
 
 import pandas as pd
 
-from credit_risk.aws.dynamodb import PredictionStore, create_prediction_store
-from credit_risk.aws.s3 import ArtifactStore
 from credit_risk.config.settings import load_config
 from credit_risk.features.engineering import apply_feature_engineering
 from credit_risk.models.explain import reason_codes_for_row
@@ -25,6 +23,8 @@ from credit_risk.schemas.payloads import (
     PredictionResponse,
 )
 from credit_risk.scoring.rules import assign_risk_band, decision_recommendation
+from credit_risk.storage.artifacts import ArtifactStore
+from credit_risk.storage.predictions import PredictionStore, create_prediction_store
 from credit_risk.utils.artifacts import ModelBundle, create_artifact_store, load_bundle
 from credit_risk.utils.logging import get_logger, log_event
 
@@ -129,7 +129,7 @@ class PredictionService:
         return BatchPredictionResponse(
             batch_id=batch_id,
             request_count=len(applicants),
-            output_s3_path=output_uri,
+            output_path=output_uri,
             prediction_ids=prediction_ids,
         )
 

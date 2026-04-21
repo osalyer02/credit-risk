@@ -11,8 +11,8 @@ from typing import Any
 
 import joblib
 
-from credit_risk.aws.s3 import ArtifactStore, LocalArtifactStore
 from credit_risk.schemas.config import AppConfig
+from credit_risk.storage.artifacts import ArtifactStore, LocalArtifactStore
 
 
 @dataclass
@@ -58,15 +58,7 @@ class ModelBundle:
 
 
 def create_artifact_store(config: AppConfig) -> ArtifactStore:
-    if config.storage.backend == "local":
-        return LocalArtifactStore(Path(config.artifacts.local_dir))
-
-    from credit_risk.aws.s3 import S3ArtifactStore
-
-    if not config.storage.s3_bucket:
-        raise ValueError("storage.s3_bucket is required for aws backend")
-
-    return S3ArtifactStore(bucket=config.storage.s3_bucket, prefix=config.storage.s3_prefix)
+    return LocalArtifactStore(Path(config.artifacts.local_dir))
 
 
 def save_bundle(bundle: ModelBundle, store: ArtifactStore, key: str) -> str:

@@ -106,10 +106,6 @@ class ArtifactsConfig(BaseModel):
 
 
 class StorageConfig(BaseModel):
-    backend: Literal["local", "aws"] = "local"
-    s3_bucket: Optional[str] = None
-    s3_prefix: str = "models/"
-    dynamodb_table: str = "credit_predictions"
     local_prediction_store_path: str = "artifacts/predictions.jsonl"
 
 

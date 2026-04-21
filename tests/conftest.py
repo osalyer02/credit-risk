@@ -68,7 +68,6 @@ def local_test_config(tmp_path: Path) -> AppConfig:
     base["project"]["model_version"] = "test-v1"
     base["artifacts"]["local_dir"] = str(artifact_models_dir)
     base["artifacts"]["metrics_dir"] = str(artifact_metrics_dir)
-    base["storage"]["backend"] = "local"
     base["storage"]["local_prediction_store_path"] = str(artifact_root / "predictions.jsonl")
 
     return AppConfig.model_validate(base)

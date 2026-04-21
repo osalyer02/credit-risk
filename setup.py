@@ -9,7 +9,6 @@ setup(
     packages=find_packages(where="src"),
     python_requires=">=3.9",
     install_requires=[
-        "boto3>=1.34.0",
         "fastapi>=0.110.0",
         "joblib>=1.4.0",
         "numpy>=1.26.0",
@@ -21,7 +20,6 @@ setup(
         "uvicorn>=0.29.0",
     ],
     extras_require={
-        "aws": ["mangum>=0.17.0"],
         "explainability": ["shap>=0.46.0"],
         "dev": [
             "httpx>=0.27.0",

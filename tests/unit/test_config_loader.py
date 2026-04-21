@@ -44,10 +44,6 @@ def test_load_config_supports_yaml_and_env_overrides(tmp_path, monkeypatch):
             "metrics_filename": "metrics.json",
         },
         "storage": {
-            "backend": "local",
-            "s3_bucket": None,
-            "s3_prefix": "models/",
-            "dynamodb_table": "credit_predictions",
             "local_prediction_store_path": "artifacts/predictions.jsonl",
         },
         "api": {"host": "0.0.0.0", "port": 8000, "title": "API", "debug": False},

@@ -28,14 +28,14 @@ class ApplicantInput(BaseModel):
 
 class PredictBatchRequest(BaseModel):
     applicants: Optional[list[ApplicantInput]] = None
-    s3_input_path: Optional[str] = None
+    input_path: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_source(self) -> "PredictBatchRequest":
         has_applicants = bool(self.applicants)
-        has_s3 = bool(self.s3_input_path)
-        if has_applicants == has_s3:
-            raise ValueError("Exactly one of applicants or s3_input_path must be provided")
+        has_input_path = bool(self.input_path)
+        if has_applicants == has_input_path:
+            raise ValueError("Exactly one of applicants or input_path must be provided")
         return self
 
 
@@ -52,7 +52,7 @@ class PredictionResponse(BaseModel):
 class BatchPredictionResponse(BaseModel):
     batch_id: str
     request_count: int = Field(ge=0)
-    output_s3_path: Optional[str] = None
+    output_path: Optional[str] = None
     prediction_ids: list[str] = Field(default_factory=list)
 
 

@@ -1,49 +1,29 @@
 # credit-risk-platform
 
-Production-style credit risk modeling system for binary default prediction with:
-
-- modular `src/` Python package layout,
-- local/AWS-compatible data and artifact persistence,
-- calibrated probability modeling,
-- explainability outputs,
-- FastAPI scoring API,
-- AWS SAM infrastructure template.
+Local-first credit risk modeling and scoring system for binary default prediction.
 
 ## Features
 
-- Data ingestion from local paths or `s3://` URIs (CSV or Parquet)
+- Local file ingestion (`.csv` and `.parquet`)
 - Schema validation and deterministic data cleaning
 - Reusable feature engineering + preprocessing pipeline
 - Model candidates:
   - Logistic Regression
-  - Random Forest (tree-based)
+  - Random Forest
 - Probability calibration:
-  - sigmoid (Platt)
-  - isotonic
-- Evaluation outputs:
-  - ROC-AUC
-  - PR-AUC
-  - log loss
-  - Brier score
-  - KS statistic
-  - confusion matrix summaries
-  - calibration curve and expected calibration error (ECE)
-- Explainability:
-  - SHAP when available
-  - fallback reason-code generation from model coefficients/importances
-- API routes:
+  - Sigmoid (Platt)
+  - Isotonic
+- Explainability outputs (SHAP optional with fallback reason codes)
+- FastAPI scoring API with routes:
+  - `GET /` local web workbench
   - `GET /health`
   - `POST /predict`
   - `POST /predict_batch`
   - `GET /prediction/{request_id}`
-- Persistence abstractions:
-  - S3-compatible artifact store
-  - DynamoDB-compatible prediction metadata store
-- AWS SAM template provisioning:
-  - Lambda
-  - API Gateway
-  - S3 bucket
-  - DynamoDB table
+- Local persistence:
+  - model bundle artifacts on disk
+  - batch prediction outputs on disk
+  - prediction records in JSONL
 
 ## Repository Structure
 
@@ -55,17 +35,16 @@ credit-risk-platform/
 ├── scripts/
 ├── src/credit_risk/
 │   ├── api/
-│   ├── aws/
 │   ├── config/
 │   ├── data/
 │   ├── features/
 │   ├── models/
 │   ├── schemas/
 │   ├── scoring/
+│   ├── storage/
 │   └── utils/
 ├── tests/
-├── artifacts/
-└── template.yaml
+└── artifacts/
 ```
 
 ## Installation
@@ -78,17 +57,16 @@ pip install -e .[dev]
 
 ## Configuration
 
-The platform uses YAML config with environment variable overrides.
+The platform uses YAML config with environment-variable overrides.
 
 - Base config: `configs/default.yaml`
 - Local overrides: `configs/local.yaml`
-- AWS overrides: `configs/aws.yaml`
 
 Environment variables use `CRP_` prefix and `__` for nesting:
 
 ```bash
 export CRP_PROJECT__MODEL_VERSION=v1.2.3
-export CRP_STORAGE__BACKEND=aws
+export CRP_API__PORT=8080
 ```
 
 ## Train Locally
@@ -113,7 +91,7 @@ Artifacts are saved under:
 - `artifacts/metrics/<model_version>/validation_report.json`
 - `artifacts/metrics/<model_version>/model_registry_record.json`
 
-## Run API Locally
+## Run API + Local UI
 
 After training:
 
@@ -121,21 +99,13 @@ After training:
 uvicorn credit_risk.api.app:app --reload
 ```
 
-### Sample `POST /predict` payload
+Then open [http://127.0.0.1:8000](http://127.0.0.1:8000) for the local web workbench.
 
-```json
-{
-  "application_id": "app-001",
-  "annual_income": 85000,
-  "loan_amount": 12000,
-  "dti": 18.7,
-  "fico_range_low": 680,
-  "fico_range_high": 684,
-  "revolving_utilization": 42.1,
-  "open_accounts": 8,
-  "delinquencies_2y": 0
-}
-```
+The UI supports:
+
+- Interactive single-applicant scoring
+- Batch scoring from a local CSV/Parquet file path
+- Service health checks and raw JSON response inspection
 
 ## Test
 
@@ -143,17 +113,7 @@ uvicorn credit_risk.api.app:app --reload
 pytest
 ```
 
-## Deploy with AWS SAM
-
-```bash
-sam build
-sam deploy --guided
-```
-
-The template provisions Lambda + API Gateway + S3 + DynamoDB.
-
 ## Notes
 
-- Use `storage.backend=local` for local development.
-- Use `storage.backend=aws` with bucket/table configuration to run in AWS.
+- The project is local-only and does not require cloud services.
 - SHAP is optional; fallback explanations are always available.

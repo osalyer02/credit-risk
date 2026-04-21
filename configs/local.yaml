@@ -1,5 +1,4 @@
 storage:
-  backend: local
   local_prediction_store_path: artifacts/predictions.jsonl
 
 api:
